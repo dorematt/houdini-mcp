@@ -94,6 +94,17 @@ The Houdini plugin runs the MCP server directly inside Houdini, using stdio tran
 - Configure your MCP client (Claude Desktop, Cursor, etc.) to use stdio transport
 - Click "Stop MCP" to stop the server
 
+For the recommended external HTTP architecture, configure the repository path
+before launching Houdini:
+
+```text
+HOUDINI_MCP_GATEWAY_ROOT=C:/path/to/houdini-mcp
+```
+
+The shelf then provides **Start All**, **Stop All**, and **All Status** controls
+for the loopback-only Houdini listener (`18811`) and HTTP gateway (`3055`). The
+gateway uses the repository's `.venv`; create it and install the project first.
+
 **MCP Client Configuration (stdio mode):**
 ```json
 {
@@ -184,6 +195,7 @@ Environment variables:
 | `MCP_PORT` | `3055` | MCP server HTTP port |
 | `MCP_TRANSPORT` | `http` | Transport type (http, stdio, sse) |
 | `LOG_LEVEL` | `INFO` | Logging level |
+| `HOUDINI_MCP_GATEWAY_ROOT` | *(unset)* | Repository path used by the combined Houdini shelf controls |
 
 ## Tool Categories (43 Tools)
 

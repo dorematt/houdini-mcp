@@ -63,16 +63,18 @@ def reset_listener() -> None:
     _listener = None
 
 
-def start_hrpyc_server(port: int | None = None) -> dict:
+def start_hrpyc_server(port: int | None = None, host: str | None = None) -> dict:
     """Start the hrpyc listener for remote connections (backwards-compatible).
 
     Bind host / security options are read from the environment
     (``HOUDINI_RPC_BIND_HOST``, ``HOUDINI_RPC_TRUSTED_NETWORK``,
-    ``HOUDINI_RPC_TOKEN``). ``port`` overrides ``HOUDINI_RPC_BIND_PORT`` when
-    provided.
+    ``HOUDINI_RPC_TOKEN``). Explicit ``host`` and ``port`` values override
+    the corresponding environment settings.
     """
     listener = _get_listener()
     cfg = ListenerConfig.from_env()
+    if host is not None:
+        cfg.host = host
     if port is not None:
         cfg.port = port
     return listener.start(cfg)

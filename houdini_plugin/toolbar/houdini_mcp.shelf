@@ -2,6 +2,9 @@
 <shelfDocument>
   <!-- Houdini MCP Shelf -->
   <toolshelf name="houdini_mcp" label="Houdini MCP">
+    <memberTool name="all_start"/>
+    <memberTool name="all_stop"/>
+    <memberTool name="all_status"/>
     <memberTool name="mcp_start"/>
     <memberTool name="mcp_stop"/>
     <memberTool name="mcp_status"/>
@@ -10,6 +13,112 @@
     <memberTool name="hrpyc_status"/>
     <memberTool name="hrpyc_selftest"/>
   </toolshelf>
+
+  <tool name="all_start" label="Start All" icon="hicon:/SVGIcons.index?TOP_commandserver.svg">
+    <helpText><![CDATA[
+Start both services required for external MCP clients:
+- Houdini hrpyc listener on 127.0.0.1:18811
+- External MCP HTTP gateway on 127.0.0.1:3055
+    ]]></helpText>
+    <script scriptType="python"><![CDATA[
+import hou
+
+try:
+    from houdini_mcp_plugin import start_all_services
+
+    result = start_all_services(port=18811)
+    remote = result.get("remote", {})
+    gateway = result.get("gateway", {})
+    if result.get("status") == "success":
+        hou.ui.displayMessage(
+            "Houdini MCP services are running.\n\n"
+            f"Houdini bridge: {remote.get('host', '127.0.0.1')}:"
+            f"{remote.get('bound_port', remote.get('port', 18811))}\n"
+            f"MCP gateway: {gateway.get('endpoint', 'http://127.0.0.1:3055/mcp')}",
+            title="Houdini MCP - Start All"
+        )
+    else:
+        message = gateway.get("message") or remote.get("message") or "Unknown startup error."
+        hou.ui.displayMessage(
+            f"Failed to start all services:\n{message}",
+            title="Houdini MCP - Start All",
+            severity=hou.severityType.Error
+        )
+except Exception as e:
+    hou.ui.displayMessage(
+        f"Error starting Houdini MCP services:\n{e}",
+        title="Houdini MCP - Start All",
+        severity=hou.severityType.Error
+    )
+    ]]></script>
+  </tool>
+
+  <tool name="all_stop" label="Stop All" icon="hicon:/SVGIcons.index?TOP_commandserverend.svg">
+    <helpText><![CDATA[
+Stop the external MCP HTTP gateway and Houdini hrpyc listener.
+    ]]></helpText>
+    <script scriptType="python"><![CDATA[
+import hou
+
+try:
+    from houdini_mcp_plugin import stop_all_services
+
+    result = stop_all_services()
+    gateway = result.get("gateway", {})
+    remote = result.get("remote", {})
+    if result.get("status") == "success":
+        hou.ui.displayMessage(
+            "Houdini MCP services stopped.",
+            title="Houdini MCP - Stop All"
+        )
+    else:
+        messages = [
+            item.get("message")
+            for item in (gateway, remote)
+            if item.get("status") == "error" and item.get("message")
+        ]
+        hou.ui.displayMessage(
+            "Some services could not be stopped:\n" + "\n".join(messages),
+            title="Houdini MCP - Stop All",
+            severity=hou.severityType.Warning
+        )
+except Exception as e:
+    hou.ui.displayMessage(
+        f"Error stopping Houdini MCP services:\n{e}",
+        title="Houdini MCP - Stop All",
+        severity=hou.severityType.Error
+    )
+    ]]></script>
+  </tool>
+
+  <tool name="all_status" label="All Status" icon="NETWORKS_top">
+    <helpText><![CDATA[
+Show the independent state of the Houdini listener and MCP gateway.
+    ]]></helpText>
+    <script scriptType="python"><![CDATA[
+import hou
+
+try:
+    from houdini_mcp_plugin import get_all_services_status
+
+    result = get_all_services_status()
+    gateway = result.get("gateway", {})
+    remote = result.get("remote", {})
+    hou.ui.displayMessage(
+        "Houdini MCP combined status\n\n"
+        f"Houdini bridge (18811): {'RUNNING' if remote.get('running') else 'STOPPED'}\n"
+        f"MCP gateway (3055): {'RUNNING' if gateway.get('running') else 'STOPPED'}\n"
+        f"Gateway managed by this session: {gateway.get('managed', False)}",
+        title="Houdini MCP - All Status"
+    )
+except Exception as e:
+    hou.ui.displayMessage(
+        f"Error checking Houdini MCP services:\n{e}",
+        title="Houdini MCP - All Status",
+        severity=hou.severityType.Error
+    )
+    ]]></script>
+  </tool>
 
   <tool name="mcp_start" label="Start MCP" icon="MISC_python">
     <helpText><![CDATA[

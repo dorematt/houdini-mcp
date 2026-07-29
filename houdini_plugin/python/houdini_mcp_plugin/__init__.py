@@ -20,7 +20,9 @@ houdini-mcp-vzp.9). The hrpyc modes above are intentionally left untouched.
 
 __version__ = "0.2.0"
 
+from .combined import get_all_services_status, start_all_services, stop_all_services
 from .connection import LocalHoudiniConnection, get_connection
+from .gateway import get_gateway_status, is_gateway_running, start_gateway, stop_gateway
 from .listener import (
     DEFAULT_HOST,
     DEFAULT_PORT,
@@ -62,6 +64,15 @@ __all__ = [
     # Connection
     "LocalHoudiniConnection",
     "get_connection",
+    # external HTTP gateway
+    "start_gateway",
+    "stop_gateway",
+    "is_gateway_running",
+    "get_gateway_status",
+    # combined listener + gateway controls
+    "start_all_services",
+    "stop_all_services",
+    "get_all_services_status",
     # stdio mode (MCP server in Houdini)
     "start_server",
     "stop_server",
