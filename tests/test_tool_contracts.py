@@ -157,7 +157,7 @@ class TestDocumentedExamplesValid:
         if not readme_path.exists():
             return  # Skip if README not found
 
-        readme_content = readme_path.read_text()
+        readme_content = readme_path.read_text(encoding="utf-8")
 
         # Find all code blocks that might use execute_code
         code_blocks = re.findall(r"```(?:python|bash)?\n(.*?)```", readme_content, re.DOTALL)
@@ -176,7 +176,7 @@ class TestDocumentedExamplesValid:
         server_path = pathlib.Path(__file__).parent.parent / "houdini_mcp" / "server.py"
         assert server_path.exists()
 
-        content = server_path.read_text()
+        content = server_path.read_text(encoding="utf-8")
 
         # Find execute_code function and its docstring
         if "def execute_code" in content and "Example:" in content:
@@ -197,7 +197,7 @@ class TestDocumentedExamplesValid:
             return
 
         for py_file in examples_dir.rglob("*.py"):
-            content = py_file.read_text()
+            content = py_file.read_text(encoding="utf-8")
             assert "import hou" not in content, (
                 f"Example file {py_file.name} incorrectly uses 'import hou'"
             )
@@ -252,7 +252,7 @@ class TestMinimalValidExamplesInDocs:
         doc_path = pathlib.Path(__file__).parent.parent / "docs" / "tool-contracts.md"
         assert doc_path.exists(), "docs/tool-contracts.md must exist"
 
-        content = doc_path.read_text()
+        content = doc_path.read_text(encoding="utf-8")
         assert "execute_code" in content
         assert "render_viewport" in content
         assert "pre-inject" in content.lower() or "pre-injected" in content.lower()
@@ -265,7 +265,7 @@ class TestMinimalValidExamplesInDocs:
         if not doc_path.exists():
             return
 
-        content = doc_path.read_text()
+        content = doc_path.read_text(encoding="utf-8")
 
         # Should have code examples
         assert "```python" in content

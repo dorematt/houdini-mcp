@@ -1455,7 +1455,8 @@ def render_node_network(
 
 def run_server(transport: str = "http", port: int = 3055) -> None:
     """Run the MCP server."""
-    logger.info(f"Starting Houdini MCP Server on {transport}://0.0.0.0:{port}")
+    bind_host = os.getenv("MCP_HOST", "127.0.0.1")
+    logger.info(f"Starting Houdini MCP Server on {transport}://{bind_host}:{port}")
     logger.info(f"Houdini connection target: {HOUDINI_HOST}:{HOUDINI_PORT}")
     logger.info(f"Log level: {log_level}")
 
@@ -1467,7 +1468,7 @@ def run_server(transport: str = "http", port: int = 3055) -> None:
     if transport_literal == "stdio":
         mcp.run(transport=transport_literal, show_banner=False)
     else:
-        mcp.run(transport=transport_literal, host="0.0.0.0", port=port)
+        mcp.run(transport=transport_literal, host=bind_host, port=port)
 
 
 if __name__ == "__main__":

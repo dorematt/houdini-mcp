@@ -57,22 +57,24 @@ The Houdini plugin runs the MCP server directly inside Houdini, using stdio tran
 
 **Installation:**
 
-1. Copy the `houdini_plugin` folder to your Houdini packages directory:
+1. Copy the `houdini_plugin` folder beside your Houdini packages directory
+   (replace `22.0` with your installed Houdini major/minor version):
    ```bash
    # Windows
-   copy houdini_plugin %USERPROFILE%\Documents\houdini20.5\packages\houdini_mcp
+   xcopy "houdini_plugin\*" "%USERPROFILE%\Documents\houdini22.0\houdini_mcp\" /E /I /Y
    
    # Linux/Mac
-   cp -r houdini_plugin ~/houdini20.5/packages/houdini_mcp
+   mkdir -p ~/houdini22.0/houdini_mcp
+   cp -r houdini_plugin/. ~/houdini22.0/houdini_mcp/
    ```
 
 2. Copy the package JSON:
    ```bash
    # Windows
-   copy houdini_plugin\houdini_mcp.json %USERPROFILE%\Documents\houdini20.5\packages\
+   copy "houdini_plugin\houdini_mcp.json" "%USERPROFILE%\Documents\houdini22.0\packages\"
    
    # Linux/Mac
-   cp houdini_plugin/houdini_mcp.json ~/houdini20.5/packages/
+   cp houdini_plugin/houdini_mcp.json ~/houdini22.0/packages/
    ```
 
 3. Install FastMCP in Houdini's Python:
@@ -178,6 +180,7 @@ Environment variables:
 |----------|---------|-------------|
 | `HOUDINI_HOST` | `localhost` | Houdini machine IP/hostname |
 | `HOUDINI_PORT` | `18811` | hrpyc server port |
+| `MCP_HOST` | `127.0.0.1` | MCP HTTP bind host; set explicitly for remote access |
 | `MCP_PORT` | `3055` | MCP server HTTP port |
 | `MCP_TRANSPORT` | `http` | Transport type (http, stdio, sse) |
 | `LOG_LEVEL` | `INFO` | Logging level |
