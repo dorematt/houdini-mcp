@@ -1,4 +1,4 @@
-"""Pane screenshot capture tools using Qt/PySide2 via RPyC.
+"""Pane screenshot capture tools using Qt/PySide via RPyC.
 
 This module provides tools for capturing screenshots of Houdini pane tabs
 using Qt's screen grab functionality. Screenshots are returned as base64-encoded
@@ -90,7 +90,7 @@ VALID_PANE_TYPES: list[str] = [
 
 def _get_qt_modules(hou: Any) -> tuple[Any, Any, Any]:
     """
-    Get PySide2 Qt modules from the RPyC connection.
+    Get Houdini's available PySide Qt modules from the RPyC connection.
 
     Args:
         hou: The hou module netref
@@ -105,11 +105,18 @@ def _get_qt_modules(hou: Any) -> tuple[Any, Any, Any]:
     if conn is None:
         raise HoudiniConnectionError("Cannot get RPyC connection from hou module")
 
-    QtWidgets = conn.modules["PySide2.QtWidgets"]
-    QtCore = conn.modules["PySide2.QtCore"]
-    QtGui = conn.modules["PySide2.QtGui"]
+    errors = []
+    for binding in ("PySide6", "PySide2"):
+        try:
+            return (
+                conn.modules[f"{binding}.QtWidgets"],
+                conn.modules[f"{binding}.QtCore"],
+                conn.modules[f"{binding}.QtGui"],
+            )
+        except ImportError as exc:
+            errors.append(f"{binding}: {exc}")
 
-    return QtWidgets, QtCore, QtGui
+    raise HoudiniConnectionError("No supported PySide binding found (" + "; ".join(errors) + ")")
 
 
 def _get_available_pane_types(hou: Any) -> list[str]:
@@ -176,8 +183,8 @@ def _capture_pane_to_bytes(
     Args:
         hou: The hou module reference
         pane_type_name: Name of the pane type to capture
-        QtWidgets: PySide2.QtWidgets module reference
-        QtCore: PySide2.QtCore module reference
+        QtWidgets: PySide QtWidgets module reference
+        QtCore: PySide QtCore module reference
         fit_contents: If True, fit/frame contents before capture (for supported panes)
 
     Returns:
@@ -278,7 +285,7 @@ def capture_pane_screenshot(
     Capture a screenshot of a Houdini pane tab using Qt screen grab.
 
     This function captures the screen region occupied by a specific pane tab
-    in the Houdini interface. It uses PySide2/Qt's screen grab functionality
+    in the Houdini interface. It uses PySide/Qt's screen grab functionality
     accessed remotely via RPyC.
 
     Args:
@@ -334,11 +341,10 @@ def capture_pane_screenshot(
     # Get Qt modules from RPyC connection
     try:
         QtWidgets, QtCore, _ = _get_qt_modules(hou)
-    except Exception as e:
+    except HoudiniConnectionError as e:
         return {
             "status": "error",
-            "message": f"Failed to access PySide2 modules: {e}. "
-            "Ensure Houdini has PySide2 available.",
+            "message": f"Failed to access Qt/PySide modules: {e}.",
         }
 
     # Capture pane to bytes
@@ -531,11 +537,10 @@ def render_node_network(
     # Get Qt modules from RPyC connection
     try:
         QtWidgets, QtCore, _ = _get_qt_modules(hou)
-    except Exception as e:
+    except HoudiniConnectionError as e:
         return {
             "status": "error",
-            "message": f"Failed to access PySide2 modules: {e}. "
-            "Ensure Houdini has PySide2 available.",
+            "message": f"Failed to access Qt/PySide modules: {e}.",
         }
 
     # Find NetworkEditor pane
@@ -621,11 +626,10 @@ def capture_multiple_panes(
     # Get Qt modules from RPyC connection
     try:
         QtWidgets, QtCore, _ = _get_qt_modules(hou)
-    except Exception as e:
+    except HoudiniConnectionError as e:
         return {
             "status": "error",
-            "message": f"Failed to access PySide2 modules: {e}. "
-            "Ensure Houdini has PySide2 available.",
+            "message": f"Failed to access Qt/PySide modules: {e}.",
         }
 
     results: dict[str, dict[str, Any]] = {}
