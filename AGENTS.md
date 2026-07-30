@@ -48,10 +48,10 @@ helper. Document durable workflow discoveries under `docs/workflows/`.
   close-up material decisions.
 - Treat rendering and file output as external side effects: use a small
   resolution first and verify the output artifact before reporting success.
-- When adding a Karma Physical Sky to a stage that already uses a Distant Light
-  as its key, disable the Physical Sky's built-in sun unless a deliberate
-  two-sun setup is requested. This preserves the directional key and adds only
-  environmental sky contribution.
+- When adding a Karma Physical Sky to a stage with a Distant Light key, choose
+  one explicit mode: disable the sky's built-in sun to retain the existing key,
+  or enable it and remove/reconnect the redundant Distant Light. Do not leave
+  two unintentional directional suns on the stage.
 
 ## Development
 

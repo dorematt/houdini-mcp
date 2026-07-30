@@ -17,7 +17,7 @@ shader to a USD ground prim, and rendering with Karma XPU.
 /stage/mcp_solaris_pilot
   import_forest (OUT_DECORATIONS, /World/Forest)
   import_ground (ground_normals, /World/Forest/Ground)
-  key_sun -> forest_camera -> ground_material_library -> physical_sky -> texture_eval_camera
+  forest_camera -> ground_material_library -> physical_sky -> texture_eval_camera
   -> karma_xpu_settings -> render_karma_xpu
 
 /img/mcp_ground_texture
@@ -51,9 +51,10 @@ scale is `0.1`. A dedicated `/World/Cameras/texture_eval_camera` gives a
 repeatable, closer Karma XPU material evaluation render.
 
 `physical_sky` is a Karma Physical Sky LOP at `/World/Lights/physical_sky`.
-Its sky is enabled, while its built-in sun is disabled because the existing
-`key_sun` Distant Light remains the directional key. This adds sky contribution
-without doubling the sun.
+Its sky and built-in sun are enabled. The prior `key_sun` Distant Light LOP was
+removed and `forest_camera` was reconnected directly to `import_ground`, so
+the scene has one physically matched sky/sun system rather than two directional
+sources.
 
 ## Important Houdini 22 behaviour
 
@@ -118,8 +119,9 @@ The pilot identifies three narrow, high-value helpers:
    LOP camera from a source camera's framing, select it in Karma Render
    Settings, and render a non-overwriting close material-evaluation artifact.
 7. `add_karma_physical_sky` (candidate): add a named Physical Sky after a
-   specified LOP node, with an explicit option to disable its built-in sun when
-   the stage already has a Distant Light key.
+   specified LOP node, with an explicit sun mode: retain an existing Distant
+   Light key and disable the sky sun, or replace that key and enable the sky
+   sun while reconnecting its downstream nodes.
 
 Do not combine these into one opaque scene-generator tool. Each has a stable
 boundary, can be independently tested, and lets an agent inspect or edit the
