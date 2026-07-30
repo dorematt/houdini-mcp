@@ -32,7 +32,9 @@ helper. Document durable workflow discoveries under `docs/workflows/`.
   Library.
 - Before wiring MtlX Image texture placement, verify the target USD prim has
   the required texture-coordinate primvar (normally `primvars:st`). A COP
-  texture or a Place2D VOP does not create missing geometry UVs.
+  texture or a Place2D VOP does not create missing geometry UVs. When creating
+  UVs for a deformed surface, place the named SOP UV-generation node upstream
+  of the deformation and verify SOP `uv` translates to USD `primvars:st`.
 - Treat rendering and file output as external side effects: use a small
   resolution first and verify the output artifact before reporting success.
 

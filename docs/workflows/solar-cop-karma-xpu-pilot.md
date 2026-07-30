@@ -11,7 +11,8 @@ shader to a USD ground prim, and rendering with Karma XPU.
 ```text
 /obj/mcp_forest_scene
   OUT_DECORATIONS = tree_normals + rock_normals
-  ground_normals
+  ground_to_xz -> ground_uvs (UV Texture, Rows & Columns, vertex uv)
+    -> terrain_undulation -> ground_normals
 
 /stage/mcp_solaris_pilot
   import_forest (OUT_DECORATIONS, /World/Forest)
@@ -34,9 +35,10 @@ The ground mesh is `/World/Forest/Ground/mesh_0`. Its
 contains an `mtlxstandard_surface`, two `mtlximage` nodes, an
 `mtlxnormalmap`, and an `mtlxsurfacematerial` output. Karma XPU rendered the
 result at 640x360 with 16 primary samples. The `op:`-driven MaterialX graph
-also rendered successfully with Karma XPU. The ground currently has no UV
-primvar, so the graph must not use MtlX Place2D until the geometry has an
-explicit texture-coordinate source.
+also rendered successfully with Karma XPU. The ground has a vertex `uv` SOP
+attribute, inserted before `terrain_undulation`; SOP Import translates this to
+face-varying `primvars:st` on the USD mesh. The shared MtlX Place2D now scales
+both image textures at `(4, 4)`.
 
 ## Important Houdini 22 behaviour
 
@@ -65,9 +67,10 @@ explicit texture-coordinate source.
 - Feed both image nodes from a shared `mtlxplace2d`. Its scale divides UVs, so
   `(4, 4)` makes the texture appear four times larger without increasing the
   Copernicus resolution. This requires a valid `primvars:st` (or an explicit
-  replacement) on the USD mesh. The pilot ground has no `uv` attribute in SOPs
-  and no `primvars:st` in USD, so Place2D has no valid sampling coordinate
-  instead of providing a safe scaling control. Set the normal image signature to `vector3`
+  replacement) on the USD mesh. In this pilot, `ground_uvs` uses the UV Texture
+  SOP's Rows & Columns mapping on the undeformed grid, writes vertex `uv`, and
+  sits before `terrain_undulation`; SOP Import authors it as face-varying
+  `primvars:st`. Set the normal image signature to `vector3`
   before connecting it to `mtlxnormalmap`.
 - Build MaterialX shaders inside a MaterialX shader-builder subnet with its
   Material Flag set. Put the individual MtlX nodes inside that subnet and let
@@ -88,8 +91,9 @@ The pilot identifies three narrow, high-value helpers:
    verify a texture-coordinate primvar before adding placement, and bind it to
    an explicit USD prim pattern.
 4. `ensure_usd_texture_coordinates` (candidate): verify an imported mesh has
-   the requested USD texture-coordinate primvar and provide an actionable
-   result when a preceding SOP UV-generation step is needed.
+   the requested USD texture-coordinate primvar. Optionally insert a named UV
+   Texture SOP directly before a specified deformation node, then verify the
+   resulting USD `primvars:st`.
 
 Do not combine these into one opaque scene-generator tool. Each has a stable
 boundary, can be independently tested, and lets an agent inspect or edit the
@@ -103,6 +107,7 @@ result between stages.
 - [Fractal Noise COP](https://www.sidefx.com/docs/houdini/nodes/cop/fractalnoise.html)
 - [Mono to RGB COP](https://www.sidefx.com/docs/houdini/nodes/cop/monotorgb.html)
 - [Working with Copernicus nodes](https://www.sidefx.com/docs/houdini/copernicus/working_with_cops.html)
+- [UV Texture SOP](https://www.sidefx.com/docs/houdini/nodes/sop/texture.html)
 - [MtlX Place2D](https://www.sidefx.com/docs/houdini/nodes/vop/mtlxplace2d.html)
 - [MtlX Image](https://www.sidefx.com/docs/houdini/nodes/vop/mtlximage.html)
 - [Karma XPU](https://www.sidefx.com/docs/houdini/solaris/karma_xpu.html)
