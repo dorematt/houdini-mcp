@@ -26,6 +26,13 @@ helper. Document durable workflow discoveries under `docs/workflows/`.
 - Put experimental nodes in clearly named `mcp_*` networks.
 - Verify LOP results through the USD stage and `errors()`/`warnings()`; LOP
   nodes do not use the SOP-style `error()` API.
+- Build MaterialX shaders inside a MaterialX shader-builder subnet with its
+  Material Flag set. Keep Material Library `matnode` at `*` when that subnet is
+  the intended export boundary; do not place MtlX VOPs directly in the Material
+  Library.
+- Before wiring MtlX Image texture placement, verify the target USD prim has
+  the required texture-coordinate primvar (normally `primvars:st`). A COP
+  texture or a Place2D VOP does not create missing geometry UVs.
 - Treat rendering and file output as external side effects: use a small
   resolution first and verify the output artifact before reporting success.
 
