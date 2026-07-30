@@ -20,15 +20,20 @@ shader to a USD ground prim, and rendering with Karma XPU.
   -> karma_xpu_settings -> render_karma_xpu
 
 /img/mcp_ground_texture
-  Layer (1024x1024) -> Fractal Noise -> Height to Normal -> ROP Image
-                         -> Mono to RGB -> ROP Image
+  Layer (1024x1024) -> Fractal Noise -> Height to Normal -> OUT_NORMAL
+                         -> Mono to RGB -> OUT_ALBEDO
+
+ground_material_library
+  MtlX Place2D (scale 4,4) -> MtlX Image texcoord inputs
+  MtlX Images read op:/img/mcp_ground_texture/OUT_ALBEDO and OUT_NORMAL
 ```
 
 The ground mesh is `/World/Forest/Ground/mesh_0`. Its
 `material:binding` target is `/materials/mcp_ground`. The Material Library LOP
 contains an `mtlxstandard_surface`, two `mtlximage` nodes, an
 `mtlxnormalmap`, and an `mtlxsurfacematerial` output. Karma XPU rendered the
-result at 640x360 with 16 primary samples.
+result at 640x360 with 16 primary samples. The `op:`-driven MaterialX graph
+also rendered successfully with Karma XPU.
 
 ## Important Houdini 22 behaviour
 
@@ -50,6 +55,14 @@ result at 640x360 with 16 primary samples.
   generic Ramp COP with the same name: its inputs have a different meaning.
 - A merged SOP result becomes one USD mesh. To bind a material only to ground,
   import ground and decorations as separate USD prims before binding.
+- Use named Null COPs such as `OUT_ALBEDO` and `OUT_NORMAL` as stable network
+  contracts. Point `mtlximage` at their `op:` paths to avoid writing an
+  Apprentice-watermarked texture to disk and then reading it back. The final
+  Apprentice render still carries its normal render watermark.
+- Feed both image nodes from a shared `mtlxplace2d`. Its scale divides UVs, so
+  `(4, 4)` makes the texture appear four times larger without increasing the
+  Copernicus resolution. Set the normal image signature to `vector3` before
+  connecting it to `mtlxnormalmap`.
 
 ## Candidate MCP helpers
 
@@ -58,9 +71,11 @@ The pilot identifies three narrow, high-value helpers:
 1. `import_sop_to_usd`: import a specific SOP output under an explicit USD
    root path and verify the authored prim.
 2. `create_cop_texture_set`: build a named Copernicus texture network with
-   explicit resolution and write verified albedo/normal artifacts.
+   explicit resolution and named Null output contracts; optionally write
+   artifacts only when an external file is actually required.
 3. `create_materialx_texture_material`: author a MaterialX surface from
-   texture paths and bind it to an explicit USD prim pattern.
+   texture paths (including `op:` COP sources), apply shared texture placement,
+   and bind it to an explicit USD prim pattern.
 
 Do not combine these into one opaque scene-generator tool. Each has a stable
 boundary, can be independently tested, and lets an agent inspect or edit the
@@ -74,4 +89,6 @@ result between stages.
 - [Fractal Noise COP](https://www.sidefx.com/docs/houdini/nodes/cop/fractalnoise.html)
 - [Mono to RGB COP](https://www.sidefx.com/docs/houdini/nodes/cop/monotorgb.html)
 - [Working with Copernicus nodes](https://www.sidefx.com/docs/houdini/copernicus/working_with_cops.html)
+- [MtlX Place2D](https://www.sidefx.com/docs/houdini/nodes/vop/mtlxplace2d.html)
+- [MtlX Image](https://www.sidefx.com/docs/houdini/nodes/vop/mtlximage.html)
 - [Karma XPU](https://www.sidefx.com/docs/houdini/solaris/karma_xpu.html)
