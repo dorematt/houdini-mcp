@@ -41,6 +41,11 @@ helper. Document durable workflow discoveries under `docs/workflows/`.
   Compositor Viewer is bound to the requested Null output and, until a direct
   COP-output capture helper exists, distinguish a UI screenshot from the image
   data itself.
+- Keep COP texture outputs as named contracts. A material set may expose
+  `OUT_ALBEDO`, `OUT_NORMAL`, and `OUT_ROUGHNESS`; reuse one macro noise branch
+  to correlate dirt/grass colour and roughness variation. Use a separately
+  named LOP evaluation camera and a non-overwriting render artifact for
+  close-up material decisions.
 - Treat rendering and file output as external side effects: use a small
   resolution first and verify the output artifact before reporting success.
 

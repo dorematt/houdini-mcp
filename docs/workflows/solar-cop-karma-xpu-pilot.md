@@ -17,16 +17,18 @@ shader to a USD ground prim, and rendering with Karma XPU.
 /stage/mcp_solaris_pilot
   import_forest (OUT_DECORATIONS, /World/Forest)
   import_ground (ground_normals, /World/Forest/Ground)
-  key_sun -> forest_camera -> ground_material_library
+  key_sun -> forest_camera -> ground_material_library -> texture_eval_camera
   -> karma_xpu_settings -> render_karma_xpu
 
 /img/mcp_ground_texture
-  Layer (1024x1024) -> Fractal Noise -> Height to Normal -> OUT_NORMAL
-                         -> Mono to RGB -> OUT_ALBEDO
+  Layer (1024x1024) -> high-frequency Fractal Noise -> Height to Normal -> OUT_NORMAL
+                         -> Mono to RGB ----------------------------+\
+  Layer -> macro Fractal Noise -> Mono to RGB (dirt/grass) ----------> Blend -> OUT_ALBEDO
+                              -> Mono to RGB (roughness) -------------------> OUT_ROUGHNESS
 
 ground_material_library
   MaterialX shader-builder subnet (Material Flag)
-    MtlX Image nodes read op:/img/mcp_ground_texture/OUT_ALBEDO and OUT_NORMAL
+    MtlX Image nodes read OUT_ALBEDO, OUT_NORMAL, and OUT_ROUGHNESS through op:
   Material Library matnode = *
 ```
 
@@ -40,6 +42,13 @@ attribute, inserted before `terrain_undulation`; SOP Import translates this to
 face-varying `primvars:st` on the USD mesh. For this flat ground, UV Texture
 uses Orthographic projection along Y with a scale of `(4, 4, 4)`; no MtlX
 Place2D is needed.
+
+The macro branch uses an independent low-frequency Fractal Noise to create a
+subtle dirt/grass color blend and a correlated roughness map. `OUT_ROUGHNESS`
+feeds the Standard Surface Specular Roughness input through a float MtlX Image.
+The high-frequency Height to Normal scale is `0.5`; the MaterialX Normalmap
+scale is `0.1`. A dedicated `/World/Cameras/texture_eval_camera` gives a
+repeatable, closer Karma XPU material evaluation render.
 
 ## Important Houdini 22 behaviour
 
@@ -86,7 +95,8 @@ The pilot identifies three narrow, high-value helpers:
    root path and verify the authored prim.
 2. `create_cop_texture_set`: build a named Copernicus texture network with
    explicit resolution and named Null output contracts; optionally write
-   artifacts only when an external file is actually required.
+   artifacts only when an external file is actually required. It should support
+   an optional macro albedo/roughness branch with `OUT_ROUGHNESS`.
 3. `create_materialx_texture_material`: author a MaterialX surface from
    texture paths (including `op:` COP sources) inside a MaterialX builder,
    verify a texture-coordinate primvar, and bind it to an explicit USD prim
@@ -99,6 +109,9 @@ The pilot identifies three narrow, high-value helpers:
    Null output and capture the actual image. Existing pane screenshots use a
    desktop-region grab and can return unrelated pixels even when the viewer is
    correctly bound to the COP node.
+6. `create_texture_evaluation_camera` (candidate): create a separately named
+   LOP camera from a source camera's framing, select it in Karma Render
+   Settings, and render a non-overwriting close material-evaluation artifact.
 
 Do not combine these into one opaque scene-generator tool. Each has a stable
 boundary, can be independently tested, and lets an agent inspect or edit the
