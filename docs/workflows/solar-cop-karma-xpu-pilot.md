@@ -17,7 +17,7 @@ shader to a USD ground prim, and rendering with Karma XPU.
 /stage/mcp_solaris_pilot
   import_forest (OUT_DECORATIONS, /World/Forest)
   import_ground (ground_normals, /World/Forest/Ground)
-  key_sun -> forest_camera -> ground_material_library -> texture_eval_camera
+  key_sun -> forest_camera -> ground_material_library -> physical_sky -> texture_eval_camera
   -> karma_xpu_settings -> render_karma_xpu
 
 /img/mcp_ground_texture
@@ -49,6 +49,11 @@ feeds the Standard Surface Specular Roughness input through a float MtlX Image.
 The high-frequency Height to Normal scale is `0.5`; the MaterialX Normalmap
 scale is `0.1`. A dedicated `/World/Cameras/texture_eval_camera` gives a
 repeatable, closer Karma XPU material evaluation render.
+
+`physical_sky` is a Karma Physical Sky LOP at `/World/Lights/physical_sky`.
+Its sky is enabled, while its built-in sun is disabled because the existing
+`key_sun` Distant Light remains the directional key. This adds sky contribution
+without doubling the sun.
 
 ## Important Houdini 22 behaviour
 
@@ -112,6 +117,9 @@ The pilot identifies three narrow, high-value helpers:
 6. `create_texture_evaluation_camera` (candidate): create a separately named
    LOP camera from a source camera's framing, select it in Karma Render
    Settings, and render a non-overwriting close material-evaluation artifact.
+7. `add_karma_physical_sky` (candidate): add a named Physical Sky after a
+   specified LOP node, with an explicit option to disable its built-in sun when
+   the stage already has a Distant Light key.
 
 Do not combine these into one opaque scene-generator tool. Each has a stable
 boundary, can be independently tested, and lets an agent inspect or edit the
@@ -129,3 +137,4 @@ result between stages.
 - [MtlX Place2D](https://www.sidefx.com/docs/houdini/nodes/vop/mtlxplace2d.html)
 - [MtlX Image](https://www.sidefx.com/docs/houdini/nodes/vop/mtlximage.html)
 - [Karma XPU](https://www.sidefx.com/docs/houdini/solaris/karma_xpu.html)
+- [Karma Physical Sky](https://www.sidefx.com/docs/houdini/nodes/lop/karmaphysicalsky.html)
