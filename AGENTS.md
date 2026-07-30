@@ -34,7 +34,13 @@ helper. Document durable workflow discoveries under `docs/workflows/`.
   the required texture-coordinate primvar (normally `primvars:st`). A COP
   texture or a Place2D VOP does not create missing geometry UVs. When creating
   UVs for a deformed surface, place the named SOP UV-generation node upstream
-  of the deformation and verify SOP `uv` translates to USD `primvars:st`.
+  of the deformation and verify SOP `uv` translates to USD `primvars:st`. Pick
+  the projection for the geometry: Rows & Columns repeats per grid quad, while
+  a flat terrain should normally use Orthographic projection on its normal axis.
+- Do not treat generic pane screenshots as proof of a COP image. Verify that a
+  Compositor Viewer is bound to the requested Null output and, until a direct
+  COP-output capture helper exists, distinguish a UI screenshot from the image
+  data itself.
 - Treat rendering and file output as external side effects: use a small
   resolution first and verify the output artifact before reporting success.
 

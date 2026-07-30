@@ -11,7 +11,7 @@ shader to a USD ground prim, and rendering with Karma XPU.
 ```text
 /obj/mcp_forest_scene
   OUT_DECORATIONS = tree_normals + rock_normals
-  ground_to_xz -> ground_uvs (UV Texture, Rows & Columns, vertex uv)
+  ground_to_xz -> ground_uvs (UV Texture, Orthographic/Y, vertex uv, scale 4)
     -> terrain_undulation -> ground_normals
 
 /stage/mcp_solaris_pilot
@@ -37,8 +37,9 @@ contains an `mtlxstandard_surface`, two `mtlximage` nodes, an
 result at 640x360 with 16 primary samples. The `op:`-driven MaterialX graph
 also rendered successfully with Karma XPU. The ground has a vertex `uv` SOP
 attribute, inserted before `terrain_undulation`; SOP Import translates this to
-face-varying `primvars:st` on the USD mesh. The shared MtlX Place2D now scales
-both image textures at `(4, 4)`.
+face-varying `primvars:st` on the USD mesh. For this flat ground, UV Texture
+uses Orthographic projection along Y with a scale of `(4, 4, 4)`; no MtlX
+Place2D is needed.
 
 ## Important Houdini 22 behaviour
 
@@ -64,14 +65,14 @@ both image textures at `(4, 4)`.
   contracts. Point `mtlximage` at their `op:` paths to avoid writing an
   Apprentice-watermarked texture to disk and then reading it back. The final
   Apprentice render still carries its normal render watermark.
-- Feed both image nodes from a shared `mtlxplace2d`. Its scale divides UVs, so
-  `(4, 4)` makes the texture appear four times larger without increasing the
-  Copernicus resolution. This requires a valid `primvars:st` (or an explicit
-  replacement) on the USD mesh. In this pilot, `ground_uvs` uses the UV Texture
-  SOP's Rows & Columns mapping on the undeformed grid, writes vertex `uv`, and
-  sits before `terrain_undulation`; SOP Import authors it as face-varying
-  `primvars:st`. Set the normal image signature to `vector3`
-  before connecting it to `mtlxnormalmap`.
+- Use the SOP UV projection's scale for a simple flat surface. In this pilot,
+  `ground_uvs` uses UV Texture's Orthographic projection along Y, writes vertex
+  `uv`, and sits before `terrain_undulation`; SOP Import authors it as
+  face-varying `primvars:st`. Rows & Columns is wrong here because it assigns a
+  UV tile per grid quad. Reserve MtlX Place2D for a genuine downstream
+  coordinate transform after confirming a valid texture-coordinate primvar.
+  Set the normal image signature to `vector3` before connecting it to
+  `mtlxnormalmap`.
 - Build MaterialX shaders inside a MaterialX shader-builder subnet with its
   Material Flag set. Put the individual MtlX nodes inside that subnet and let
   the Material Library's `matnode` stay `*`; this exports the intended material
@@ -88,12 +89,16 @@ The pilot identifies three narrow, high-value helpers:
    artifacts only when an external file is actually required.
 3. `create_materialx_texture_material`: author a MaterialX surface from
    texture paths (including `op:` COP sources) inside a MaterialX builder,
-   verify a texture-coordinate primvar before adding placement, and bind it to
-   an explicit USD prim pattern.
+   verify a texture-coordinate primvar, and bind it to an explicit USD prim
+   pattern.
 4. `ensure_usd_texture_coordinates` (candidate): verify an imported mesh has
    the requested USD texture-coordinate primvar. Optionally insert a named UV
    Texture SOP directly before a specified deformation node, then verify the
    resulting USD `primvars:st`.
+5. `capture_cop_output` (candidate): drive a Compositor Viewer to a named COP
+   Null output and capture the actual image. Existing pane screenshots use a
+   desktop-region grab and can return unrelated pixels even when the viewer is
+   correctly bound to the COP node.
 
 Do not combine these into one opaque scene-generator tool. Each has a stable
 boundary, can be independently tested, and lets an agent inspect or edit the
